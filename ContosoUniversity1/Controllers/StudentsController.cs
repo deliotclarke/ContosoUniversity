@@ -21,13 +21,27 @@ namespace ContosoUniversity1.Controllers
 
         // GET: Students
 
-        public async Task<IActionResult> Index(string sortOrder, string searchString)
+        public async Task<IActionResult> Index(string sortOrder,
+            string currentFilter,
+            string searchString,
+            int? pageNumber)
         {
             // ternaries that decide what to fill the switch case with the variable sortOrder
             // BUT ALSO setting ViewData - which is a dictionary of info passed to the View at the bottom
             // where both key-value pairs are strings
+            ViewData["CurrentSort"] = sortOrder;
             ViewData["NameSortParm"] = String.IsNullOrEmpty(sortOrder) ? "name_desc" : "";
             ViewData["DateSortParm"] = sortOrder == "Date" ? "date_desc" : "Date";
+
+            if (searchString != null)
+            {
+                pageNumber = 1;
+            }
+            else
+            {
+                searchString = currentFilter;
+            }
+
             ViewData["CurrentFilter"] = searchString;
 
             //declares variable and fills variable with all students from ContextDb
@@ -56,9 +70,10 @@ namespace ContosoUniversity1.Controllers
                     students = students.OrderBy(s => s.LastName);
                     break;
             }
-            return View(await students.AsNoTracking().ToListAsync());
+            int pageSize = 3;
+            return View(await PaginatedList<Student>.CreateAsync(students.AsNoTracking(), pageNumber ?? 1, pageSize));
         }
-        
+
         // GET: Students/Details/5
         public async Task<IActionResult> Details(int? id)
         {
@@ -103,7 +118,7 @@ namespace ContosoUniversity1.Controllers
                     return RedirectToAction(nameof(Index));
                 }
             }
-            catch (DbUpdateException  ex)
+            catch (DbUpdateException ex)
             {
                 //Log the error (uncomment ex variable name and write a log.
                 ModelState.AddModelError($"{ex}", "Unable to save changes. " +
@@ -178,7 +193,7 @@ namespace ContosoUniversity1.Controllers
         }
 
         // GET: Students/Delete/5
- 
+
         public async Task<IActionResult> Delete(int? id, bool? saveChangesError = false)
         {
             if (id == null)
