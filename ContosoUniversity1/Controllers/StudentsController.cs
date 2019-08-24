@@ -21,12 +21,26 @@ namespace ContosoUniversity1.Controllers
 
         // GET: Students
 
-        public async Task<IActionResult> Index(string sortOrder)
+        public async Task<IActionResult> Index(string sortOrder, string searchString)
         {
+            // ternaries that decide what to fill the switch case with the variable sortOrder
+            // BUT ALSO setting ViewData - which is a dictionary of info passed to the View at the bottom
+            // where both key-value pairs are strings
             ViewData["NameSortParm"] = String.IsNullOrEmpty(sortOrder) ? "name_desc" : "";
             ViewData["DateSortParm"] = sortOrder == "Date" ? "date_desc" : "Date";
+            ViewData["CurrentFilter"] = searchString;
+
+            //declares variable and fills variable with all students from ContextDb
             var students = from s in _context.Students
-                            select s;
+                           select s;
+
+            // if search string is not empty, uses search string to reassign students
+            if (!String.IsNullOrEmpty(searchString))
+            {
+                students = students.Where(s => s.LastName.Contains(searchString)
+                                                || s.FirstMidName.Contains(searchString));
+            }
+
             switch (sortOrder)
             {
                 case "name_desc":
